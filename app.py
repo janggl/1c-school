@@ -301,6 +301,32 @@ class MeshClient:
         self._save_debug("marks_core", data)
         return self._extract_items(data, ["data", "payload", "items", "marks"])
 
+    async def subject_averages(self):
+        await self._ensure_activated()
+        profile_id = await self._get_profile_id()
+
+        data = await self._request_json(
+            f"https://school.mos.ru/api/family/web/v1/subject_marks?student_id={profile_id}",
+            {
+                "Authorization": f"Bearer {self.student.token}",
+                "X-Mes-Subsystem": "familyweb",
+            },
+        )
+        self._save_debug("subject_marks_familyweb", data)
+        return self._extract_items(data, ["data", "payload", "items", "subjects", "subject_marks", "marks", "results"])
+
+    async def marks_dashboard(self, date_from: str, date_to: str):
+        marks_result, averages_result = await asyncio.gather(
+            self.marks_for_period(date_from, date_to),
+            self.subject_averages(),
+            return_exceptions=True,
+        )
+        if isinstance(marks_result, Exception):
+            raise marks_result
+        if isinstance(averages_result, Exception):
+            averages_result = []
+        return {"marks": marks_result, "subject_averages": averages_result}
+
     async def homework_for_period(self, date_from: str, date_to: str):
         await self._ensure_activated()
         return await self.homeworks_api.getHomeworkByDate(date_from, date_to)
@@ -490,6 +516,21 @@ class MeshDesktopApp(tk.Tk):
         ttk.Entry(tools, textvariable=self.marks_to_var, width=16).grid(row=0, column=3, padx=6)
         ttk.Button(tools, text="Показать", command=self.load_marks).grid(row=0, column=4, padx=(8, 0))
 
+        averages_card = ttk.Frame(tab, style="Card.TFrame", padding=10)
+        averages_card.pack(fill="x", padx=8, pady=(0, 8))
+        ttk.Label(averages_card, text="Средние оценки по предметам", style="SubHeader.TLabel").pack(fill="x", pady=(0, 8))
+
+        self.subject_averages_tree = ttk.Treeview(
+            averages_card,
+            columns=("subject", "average", "period"),
+            show="headings",
+            height=6,
+        )
+        for col, text, width in [("subject", "Предмет", 300), ("average", "Средний балл", 140), ("period", "Период", 260)]:
+            self.subject_averages_tree.heading(col, text=text)
+            self.subject_averages_tree.column(col, width=width, anchor="w")
+        self.subject_averages_tree.pack(fill="x")
+
         self.marks_tree = ttk.Treeview(tab, columns=("date", "subject", "value", "weight", "comment"), show="headings")
         for col, text, width in [("date", "Дата", 120), ("subject", "Предмет", 240), ("value", "Оценка", 100), ("weight", "Вес", 100), ("comment", "Комментарий", 420)]:
             self.marks_tree.heading(col, text=text)
@@ -561,6 +602,7 @@ class MeshDesktopApp(tk.Tk):
         self.token_entry.selection_range(0, tk.END)
         self.token_entry.icursor(tk.END)
         return "break"
+
 
     def _paste_into_token_entry(self, _event=None):
         try:
@@ -653,13 +695,23 @@ class MeshDesktopApp(tk.Tk):
         client = self.ensure_client()
         date_from = self.marks_from_var.get().strip()
         date_to = self.marks_to_var.get().strip()
-        self._run_async(client.marks_for_period(date_from, date_to), self._fill_marks)
+        self._run_async(client.marks_dashboard(date_from, date_to), self._fill_marks)
 
     def _fill_marks(self, marks_obj):
         for row in self.marks_tree.get_children():
             self.marks_tree.delete(row)
+        for row in self.subject_averages_tree.get_children():
+            self.subject_averages_tree.delete(row)
 
-        marks = marks_obj if isinstance(marks_obj, list) else (getattr(marks_obj, "data", None) or getattr(marks_obj, "payload", []))
+        subject_averages = []
+        marks_payload = marks_obj
+        if isinstance(marks_obj, dict):
+            subject_averages = marks_obj.get("subject_averages", [])
+            marks_payload = marks_obj.get("marks", [])
+
+        self._fill_subject_averages(subject_averages)
+
+        marks = marks_payload if isinstance(marks_payload, list) else (getattr(marks_payload, "data", None) or getattr(marks_payload, "payload", []))
         for item in marks:
             dt = safe_get(item, "created_at", "date", "updated_at", default="—")
             subject = (safe_get(item, "subject_name", "subject", default="") or safe_get(item.get("subject", {}) if isinstance(item, dict) else {}, "name", "title") or "—")
@@ -667,6 +719,45 @@ class MeshDesktopApp(tk.Tk):
             weight = safe_get(item, "weight", default="—")
             comment = (safe_get(item, "comment", "control_form_name", default="") or safe_get(item.get("control_form", {}) if isinstance(item, dict) else {}, "name", "title") or "—")
             self.marks_tree.insert("", "end", values=(dt, subject, value, weight, comment))
+
+    def _fill_subject_averages(self, averages_obj):
+        rows = self._collect_subject_average_rows(averages_obj)
+        if not rows:
+            self.subject_averages_tree.insert("", "end", values=("Нет данных от API", "—", "—"))
+            return
+
+        seen = set()
+        for row in rows:
+            if row in seen:
+                continue
+            seen.add(row)
+            self.subject_averages_tree.insert("", "end", values=row)
+
+    def _collect_subject_average_rows(self, averages_obj, inherited_subject=None):
+        items = averages_obj if isinstance(averages_obj, list) else (getattr(averages_obj, "data", None) or getattr(averages_obj, "payload", None) or getattr(averages_obj, "items", None) or averages_obj)
+        if not isinstance(items, list):
+            items = [items] if items else []
+
+        rows = []
+        for item in items:
+            subject = inherited_subject or (safe_get(item, "subject_name", "name", "title", default="") or safe_get(item.get("subject", {}) if isinstance(item, dict) else {}, "name", "title") or "—")
+            average = (safe_get(item, "average_mark", "average", "avg", "avg_mark", "mean_mark", "mean", "value", "result", default="") or safe_get(item.get("mark", {}) if isinstance(item, dict) else {}, "name", "value") or "—")
+            period = safe_get(item, "period_name", "period", "study_period_name", "attestation_period_name", "education_period_name", default="—")
+
+            if average != "?":
+                rows.append((subject, average, period))
+
+            nested_items = []
+            for key in ("periods", "results", "attestations", "children", "items"):
+                value = item.get(key) if isinstance(item, dict) else getattr(item, key, None)
+                if isinstance(value, list) and value:
+                    nested_items = value
+                    break
+
+            if nested_items:
+                rows.extend(self._collect_subject_average_rows(nested_items, subject))
+
+        return rows
 
     def load_homeworks(self):
         client = self.ensure_client()
