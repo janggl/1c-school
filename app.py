@@ -12,6 +12,7 @@ from tkinter import ttk, messagebox, scrolledtext
 from types import SimpleNamespace
 
 TOKEN_HELP_URL = "https://school.mos.ru/?backUrl=https%3A%2F%2Fschool.mos.ru%2Fv2%2Ftoken%2Frefresh"
+BUG_REPORT_URL = "https://github.com/janggl/1c-school/issues/new"
 CONFIG_FILE_NAME = "mesh_client_settings.json"
 
 
@@ -151,6 +152,7 @@ def safe_get(obj, *names, default="—"):
 
 
 class MeshClient:
+
     def __init__(self, token: str):
         self.student = Student(token)
         self.schedule_api = Schedule(self.student)
@@ -372,6 +374,16 @@ class MeshDesktopApp(tk.Tk):
             relief="raised",
         )
         style.map("TButton", background=[("active", self.colors["accent_dark"]), ("pressed", self.colors["accent_dark"])])
+        style.configure(
+            "Subtle.TButton",
+            background=self.colors["toolbar"],
+            foreground="#5f5f5f",
+            padding=(8, 4),
+            font=("Tahoma", 8),
+            borderwidth=1,
+            relief="solid",
+        )
+        style.map("Subtle.TButton", background=[("active", self.colors["panel"]), ("pressed", self.colors["panel"])])
         style.configure("TEntry", padding=5, fieldbackground="#ffffff")
         style.configure("Treeview", background=self.colors["grid"], fieldbackground=self.colors["grid"], rowheight=28, font=("Tahoma", 9))
         style.configure("Treeview.Heading", background=self.colors["accent"], foreground=self.colors["text"], font=("Tahoma", 9, "bold"), relief="raised", padding=4)
@@ -412,6 +424,9 @@ class MeshDesktopApp(tk.Tk):
         self._build_marks_tab()
         self._build_homework_tab()
         self._build_notifications_tab()
+        ttk.Button(self, text="❗ Сообщить об ошибке", style="Subtle.TButton", command=self.open_bug_report).place(
+            relx=1.0, rely=1.0, x=-14, y=-12, anchor="se"
+        )
 
     def _build_profile_tab(self):
         tab = ttk.Frame(self.notebook)
@@ -521,6 +536,9 @@ class MeshDesktopApp(tk.Tk):
 
     def open_token_help(self):
         webbrowser.open(TOKEN_HELP_URL)
+
+    def open_bug_report(self):
+        webbrowser.open(BUG_REPORT_URL)
 
     def set_status(self, text: str):
         self.after(0, lambda: self.status_var.set(f"Статус: {text}"))
