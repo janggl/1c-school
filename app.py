@@ -442,6 +442,15 @@ class MeshDesktopApp(tk.Tk):
         ttk.Label(toolbar, textvariable=self.status_var).grid(row=1, column=0, columnspan=5, sticky="w", pady=(8, 0))
         toolbar.columnconfigure(2, weight=1)
 
+        footer = ttk.Frame(self, style="Toolbar.TFrame", padding=(10, 4))
+        footer.pack(side="bottom", fill="x", padx=8, pady=(0, 8))
+        ttk.Label(
+            footer,
+            text="2026. Github janggl. Не является оффициальной версией МЭШ.",
+            style="CardLabel.TLabel",
+        ).pack(side="left")
+        ttk.Button(footer, text="❗ Сообщить об ошибке", style="Subtle.TButton", command=self.open_bug_report).pack(side="right")
+
         body = ttk.Frame(self, style="Main.TFrame", padding=6)
         body.pack(fill="both", expand=True, padx=8, pady=(0, 8))
 
@@ -453,17 +462,6 @@ class MeshDesktopApp(tk.Tk):
         self._build_marks_tab()
         self._build_homework_tab()
         self._build_notifications_tab()
-        ttk.Button(self, text="❗ Сообщить об ошибке", style="Subtle.TButton", command=self.open_bug_report).place(
-            relx=1.0, rely=1.0, x=-14, y=-12, anchor="se"
-        )
-        footer = ttk.Frame(self, style="Toolbar.TFrame", padding=(10, 4))
-        footer.pack(fill="x", padx=8, pady=(0, 8))
-        ttk.Label(
-            footer,
-            text="2026. Github janggl. Не является оффициальной версией МЭШ.",
-            style="CardLabel.TLabel",
-        ).pack(side="left")
-        ttk.Button(footer, text="❗ Сообщить об ошибке", style="Subtle.TButton", command=self.open_bug_report).pack(side="right")
 
     def _build_profile_tab(self):
         tab = ttk.Frame(self.notebook)
@@ -526,7 +524,7 @@ class MeshDesktopApp(tk.Tk):
             averages_card,
             columns=("subject", "average", "period"),
             show="headings",
-            height=6,
+            height=4,
         )
         for col, text, width in [("subject", "Предмет", 300), ("average", "Средний балл", 140), ("period", "Период", 260)]:
             self.subject_averages_tree.heading(col, text=text)
