@@ -1,7 +1,7 @@
 ![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
 
-МЭШ Клиент в стиле 1С
-неоффициальноеприложение МЭШ
+МЭШ Клиент в стиле 1С,
+неоффициальное приложение МЭШ
 =====================
 
 Что это:
