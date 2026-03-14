@@ -22,7 +22,7 @@
 - в поле сверху нужно вставить актуальный токен mos.ru / МЭШ;
 - если токен устарел, получите новый через кнопку в интерфейсе;
 - для расписания и оценок сохраняются debug-файлы в папку debug/.
-=====================
-![Telegram](https://img.shields.io/badge/Telegram-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)
 
-[Мой теллеграм](https://t.me/regcm)
+
+![Telegram](https://img.shields.io/badge/Telegram-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)  
+#[Мой теллеграм](https://t.me/regcm)
