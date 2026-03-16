@@ -3,8 +3,7 @@
 МЭШ Клиент в стиле 1С,
 неоффициальное приложение МЭШ
 =====================
-<img width="579" height="342" alt="Frame 12" src="https://github.com/user-attachments/assets/349e89ef-1ee6-4aa4-a446-969e325086e8" />
-
+<img width="579" height="342" alt="Frame 12" src="https://github.com/user-attachments/assets/89d10182-ed50-4881-ac35-f89dab071702" />
 
 
 Что это:
