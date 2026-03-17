@@ -448,7 +448,7 @@ class MeshDesktopApp(tk.Tk):
         footer.pack(side="bottom", fill="x", padx=8, pady=(0, 8))
         ttk.Label(
             footer,
-            text="2026. Github janggl. Не является оффициальной версией МЭШ.",
+            text="client v0.0.5-beta. 2026. Github janggl. Не является официальной версией МЭШ.",
             style="CardLabel.TLabel",
         ).pack(side="left")
         ttk.Button(footer, text="❗ Сообщить об ошибке", style="Subtle.TButton", command=self.open_bug_report).pack(side="right")
